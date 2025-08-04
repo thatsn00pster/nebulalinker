@@ -11,10 +11,8 @@
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 20px;
-    color: #ffffff;
-    font-family: 'Arial', sans-serif;
+    color: white;
     z-index: 99999;
-    opacity: 0.8;
   `;
   loadingDiv.innerHTML = "Loading Firebase...";
   document.body.appendChild(loadingDiv);
@@ -47,89 +45,59 @@
   const devicesRef = database.ref("sessions/public/devices");
   const keysRef = database.ref("sessions/public/keys");
 
-  // Main Host Panel Styles
+  // Create and style the host panel
   const hostPanel = document.createElement("div");
   hostPanel.style.cssText = `
     position: fixed;
-    top: 10%;
-    left: 5%;
-    right: 5%;
+    top: 50px;
+    left: 50px;
     padding: 20px;
-    background: #222;
+    background: black;
     color: white;
-    font-family: 'Arial', sans-serif;
+    font-family: sans-serif;
+    border: 2px solid white;
     border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     z-index: 99999;
-    max-height: 80vh;
+    max-height: 90vh;
     overflow: auto;
     opacity: 0;
     transform: translateY(-50px);
     transition: opacity 0.5s, transform 0.5s;
-    width: 90%;
   `;
-  hostPanel.innerHTML = "<h2 style='text-align: center;'>🌌 Host Panel</h2>";
+  hostPanel.innerHTML = "<h2>🌌 Host Panel - Devices</h2>";
   document.body.appendChild(hostPanel);
 
-  // Key Management Section
-  const keyManagementSection = document.createElement("section");
-  keyManagementSection.style.cssText = `
-    margin-top: 20px;
-    padding: 20px;
-    background-color: #333;
-    border-radius: 10px;
-  `;
-  keyManagementSection.innerHTML = "<h3>🔑 Key Management</h3>";
-  hostPanel.appendChild(keyManagementSection);
+  const keyManagementDiv = document.createElement("div");
+  keyManagementDiv.style.marginTop = "10px";
+  hostPanel.appendChild(keyManagementDiv);
 
+  const keyManagementHeader = document.createElement("div");
+  keyManagementHeader.style.cssText = "margin-top:20px;padding-top:20px;border-top:1px solid white";
+  keyManagementHeader.innerHTML = "<h3>🔑 Key Management</h3>";
+  hostPanel.appendChild(keyManagementHeader);
+
+  // Key creation form
   const keyInput = document.createElement("input");
   keyInput.placeholder = "Enter new key (e.g. ABC123)";
-  keyInput.style.cssText = `
-    width: calc(100% - 120px);
-    padding: 8px;
-    border-radius: 5px;
-    margin-right: 10px;
-    margin-bottom: 10px;
-  `;
+  keyInput.style.marginRight = '5px';
 
   const usesInput = document.createElement("input");
   usesInput.type = "number";
   usesInput.placeholder = "Uses";
-  usesInput.style.cssText = `
-    width: 100px;
-    padding: 8px;
-    border-radius: 5px;
-    margin-right: 10px;
-    margin-bottom: 10px;
-  `;
+  usesInput.style.width = "60px";
+  usesInput.style.marginRight = "5px";
 
   const levelSelect = document.createElement("select");
-  levelSelect.style.cssText = `
-    width: 150px;
-    padding: 8px;
-    border-radius: 5px;
-    margin-right: 10px;
-    margin-bottom: 10px;
-  `;
   ["Lite", 'Normal', 'Normal+', "Elite", "Elite+", "Elite++"].forEach(level => {
     const option = document.createElement("option");
     option.value = level;
     option.textContent = level;
     levelSelect.appendChild(option);
   });
+  levelSelect.style.marginRight = "5px";
 
   const createKeyButton = document.createElement("button");
   createKeyButton.textContent = "➕ Create Key";
-  createKeyButton.style.cssText = `
-    padding: 10px 20px;
-    border-radius: 5px;
-    background-color: #4CAF50;
-    color: white;
-    font-size: 14px;
-    border: none;
-    cursor: pointer;
-    margin-bottom: 10px;
-  `;
   createKeyButton.onclick = () => {
     const key = keyInput.value.trim();
     const uses = parseInt(usesInput.value);
@@ -151,44 +119,28 @@
     });
   };
 
-  keyManagementSection.appendChild(keyInput);
-  keyManagementSection.appendChild(usesInput);
-  keyManagementSection.appendChild(levelSelect);
-  keyManagementSection.appendChild(createKeyButton);
+  [keyInput, usesInput, levelSelect, createKeyButton].forEach(el => keyManagementHeader.appendChild(el));
 
   const keyListDiv = document.createElement("div");
   keyListDiv.style.marginTop = "20px";
-  keyManagementSection.appendChild(keyListDiv);
+  keyManagementHeader.appendChild(keyListDiv);
 
-  // Update Key List
+  // Function to update the key list
   function updateKeyList() {
     keysRef.on('value', snapshot => {
       const keys = snapshot.val() || {};
       keyListDiv.innerHTML = '';
       Object.entries(keys).forEach(([key, data]) => {
         const keyElement = document.createElement("div");
-        keyElement.style.cssText = `
-          border: 1px solid gray;
-          padding: 10px;
-          margin: 10px 0;
-          background: #444;
-          border-radius: 5px;
-        `;
+        keyElement.style.cssText = "border:1px solid gray;padding:8px;margin:5px 0";
         keyElement.innerHTML = `
-          <strong>${key}</strong> - ${data.usesLeft} uses left - Level: <b>${data.level}</b>
+          <b>${key}</b> - ${data.usesLeft} uses left - Level: <b>${data.level}</b>
           <br><small>Created: ${new Date(data.created).toLocaleString()}</small>
         `;
 
         const deleteButton = document.createElement("button");
         deleteButton.textContent = "❌ Delete";
-        deleteButton.style.cssText = `
-          margin-left: 10px;
-          background-color: #e74c3c;
-          color: white;
-          padding: 5px 10px;
-          border-radius: 5px;
-          cursor: pointer;
-        `;
+        deleteButton.style.marginLeft = "10px";
         deleteButton.onclick = () => {
           if (confirm(`Delete key "${key}"?`)) {
             keysRef.child(key).remove();
@@ -201,65 +153,77 @@
     });
   }
 
-  // Device Management Section
-  const deviceManagementSection = document.createElement("section");
-  deviceManagementSection.style.cssText = `
-    margin-top: 40px;
-    padding: 20px;
-    background-color: #333;
-    border-radius: 10px;
-  `;
-  deviceManagementSection.innerHTML = "<h3>🖥️ Device Management</h3>";
-  hostPanel.appendChild(deviceManagementSection);
+  const logDiv = document.createElement("div");
+  logDiv.style.cssText = "margin-top:30px;border-top:1px solid white;padding-top:20px";
+  logDiv.innerHTML = "<h3>📜 Use Log</h3>";
+  hostPanel.appendChild(logDiv);
 
-  // Refresh Devices
+  const logContainer = document.createElement('div');
+  logDiv.appendChild(logContainer);
+
+  const useLogRef = database.ref("sessions/public/logs/uses");
+  useLogRef.on("value", snapshot => {
+    const logs = snapshot.val() || {};
+    const sortedLogs = Object.entries(logs).sort((a, b) => b[1].timestamp - a[1].timestamp);
+    logContainer.innerHTML = '';
+
+    sortedLogs.forEach(([logId, log]) => {
+      const logElement = document.createElement("div");
+      logElement.style.cssText = "margin-bottom: 10px; font-size: 14px;";
+      logElement.innerHTML = `🕒 <b>${new Date(log.timestamp).toLocaleTimeString()}</b>: 
+        <i>${log.triggeredBy}</i> used <b>${log.key}</b> on <b>${log.targetDeviceName}</b>`;
+      logContainer.appendChild(logElement);
+    });
+  });
+
+  const clearLogsButton = document.createElement('button');
+  clearLogsButton.textContent = "🧹 Clear Usage Logs";
+  clearLogsButton.style.marginTop = '10px';
+  clearLogsButton.onclick = () => {
+    if (confirm("Are you sure you want to delete all usage logs?")) {
+      useLogRef.remove().then(() => alert("✅ Usage logs cleared.")).catch(err => alert(`❌ Error clearing logs: ${err.message}`));
+    }
+  };
+  logDiv.appendChild(clearLogsButton);
+
+  updateKeyList();
+
+  setTimeout(() => {
+    hostPanel.style.opacity = '1';
+    hostPanel.style.transform = "translateY(0)";
+  }, 500);
+
+  setTimeout(() => {
+    loadingDiv.style.display = "none";
+  }, 1500);
+
+  // Device management and interactions
   const refreshDevices = () => {
     devicesRef.once("value", snapshot => {
-      deviceManagementSection.querySelectorAll(".device").forEach(device => device.remove());
+      hostPanel.querySelectorAll(".device").forEach(device => device.remove());
       const devices = snapshot.val() || {};
 
       Object.entries(devices).forEach(([deviceId, deviceData]) => {
         const deviceElement = document.createElement('div');
         deviceElement.className = "device";
-        deviceElement.style.cssText = `
-          border: 1px solid white;
-          padding: 10px;
-          margin: 10px 0;
-          background: #444;
-          border-radius: 5px;
-        `;
+        deviceElement.style.cssText = "border:1px solid white;padding:10px;margin:10px 0";
 
         const deviceNameInput = document.createElement('input');
         deviceNameInput.value = deviceData.name || `Unnamed (${deviceId})`;
-        deviceNameInput.style.cssText = `
-          width: calc(100% - 20px);
-          padding: 5px;
-          border-radius: 5px;
-          background: #333;
-          color: white;
-          border: 1px solid #555;
-        `;
+        deviceNameInput.style.width = "150px";
         deviceElement.appendChild(deviceNameInput);
 
-        // Device Status Check: lastSeen timestamp
-        const currentTime = Date.now();
-        const isOnline = currentTime - deviceData.lastSeen < 5 * 60 * 1000; // 5 minutes
+        const lastSeen = deviceData.lastSeen || 0;
+        const timeSinceLastSeen = Date.now() - lastSeen;
+        const isOnline = timeSinceLastSeen < 60000;
+        const lastSeenText = deviceData.lastSeen ? new Date(deviceData.lastSeen).toLocaleTimeString() : "never";
 
-        const statusSpan = document.createElement('span');
-        statusSpan.textContent = `Status: ${isOnline ? "🟢 Online" : "🔴 Offline"}`;
-        statusSpan.style.color = isOnline ? 'green' : 'red';
+        const statusSpan = document.createElement("span");
+        statusSpan.innerHTML = `Last seen: ${lastSeenText} | Status: ${isOnline ? "Online" : "Offline"}`;
         deviceElement.appendChild(statusSpan);
 
         const removeDeviceButton = document.createElement('button');
         removeDeviceButton.textContent = "❌ Remove Device";
-        removeDeviceButton.style.cssText = `
-          margin-left: 10px;
-          background-color: #e74c3c;
-          color: white;
-          padding: 5px 10px;
-          border-radius: 5px;
-          cursor: pointer;
-        `;
         removeDeviceButton.onclick = () => {
           if (confirm(`Remove device "${deviceData.name}"?`)) {
             devicesRef.child(deviceId).remove();
@@ -267,17 +231,11 @@
         };
 
         deviceElement.appendChild(removeDeviceButton);
-        deviceManagementSection.appendChild(deviceElement);
+        hostPanel.appendChild(deviceElement);
       });
     });
   };
 
   refreshDevices();
   setInterval(refreshDevices, 30000);
-
-  // Reveal Host Panel with animation
-  setTimeout(() => {
-    hostPanel.style.opacity = 1;
-    hostPanel.style.transform = 'translateY(0)';
-  }, 500);
 })();
