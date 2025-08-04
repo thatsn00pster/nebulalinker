@@ -1,0 +1,265 @@
+(async () => {
+  try {
+    // Load Firebase scripts asynchronously
+    const loadScript = (src) => new Promise(resolve => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = resolve;
+      document.head.appendChild(script);
+    });
+
+    await loadScript("https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js");
+    await loadScript("https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js");
+
+    // Firebase configuration for your project
+    const firebaseConfig = {
+      apiKey: "AIzaSyD5hBBFtSWYOMIk1ZeLqcUKsAubdok4FWk",
+      authDomain: 'nebcasino-5aca1.firebaseapp.com',
+      databaseURL: 'https://nebcasino-5aca1-default-rtdb.firebaseio.com',
+      projectId: 'nebcasino-5aca1',
+      storageBucket: "nebcasino-5aca1.appspot.com",
+      messagingSenderId: "907673467348",
+      appId: "1:907673467348:web:37b0bcbad757f95845fe41"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Create the custom loading screen
+    const loadingScreen = document.createElement("div");
+    loadingScreen.style.cssText = `
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000000;
+      font-family: 'Arial', sans-serif;
+    `;
+
+    const loaderContainer = document.createElement("div");
+    loaderContainer.style.cssText = `
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: #fff;
+      text-align: center;
+    `;
+
+    const spinner = document.createElement("div");
+    spinner.style.cssText = `
+      border: 10px solid #f3f3f3;
+      border-top: 10px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 2s linear infinite;
+    `;
+
+    const loadingText = document.createElement("p");
+    loadingText.textContent = "Loading... Please wait.";
+    loadingText.style.marginTop = "20px";
+    loadingText.style.fontSize = "18px";
+
+    loaderContainer.appendChild(spinner);
+    loaderContainer.appendChild(loadingText);
+    loadingScreen.appendChild(loaderContainer);
+    document.body.appendChild(loadingScreen);
+
+    // Add CSS for the spinning animation
+    const styleTag = document.createElement("style");
+    styleTag.innerHTML = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(styleTag);
+
+    // Create and style the main UI (will be shown after loading)
+    const modal = document.createElement("div");
+    modal.style.cssText = `
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000000;
+    `;
+
+    const modalContent = document.createElement("div");
+    modalContent.style.cssText = `
+      background: #333;
+      padding: 40px;
+      border-radius: 10px;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      border: 2px solid #fff;
+      max-width: 600px;
+      width: 100%;
+    `;
+    modalContent.innerHTML = `
+      <h2 style="color: #3498db;">🔐 Enter Access Key</h2>
+      <input id="accessKeyInput" style="padding:15px;font-size:16px;border-radius:5px;width: 100%;background-color: #222;color: #fff;border: 1px solid #444;margin-top: 20px;" placeholder="Enter your key here">
+      <br><br>
+      <button id="submitKeyBtn" style="padding:15px 30px;font-size:16px;border:none;border-radius:5px;background-color: #3498db;color:white;cursor:pointer;transition: background-color 0.3s;">Submit</button>
+      <p id="keyError" style="color:red;display:none;margin-top:10px;">❌ Invalid or expired key.</p>
+    `;
+
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+
+    // Handle the key submission and validation
+    document.getElementById("submitKeyBtn").onclick = async () => {
+      const accessKey = document.getElementById("accessKeyInput").value.trim();
+      if (!accessKey) {
+        return;
+      }
+
+      const keyRef = database.ref("sessions/public/keys/" + accessKey);
+      const devicesRef = database.ref("sessions/public/devices");
+
+      // Get the key data from Firebase
+      const keySnapshot = await keyRef.get();
+      if (!keySnapshot.exists()) {
+        document.getElementById("keyError").style.display = "block";
+        return;
+      }
+
+      const keyData = keySnapshot.val();
+      const currentTime = Date.now();
+
+      // Check if the key is expired or used up
+      if (currentTime > keyData.expiresAt || keyData.usesLeft <= 0) {
+        await keyRef.remove();
+        document.getElementById("keyError").innerText = "❌ This key is expired or used up.";
+        document.getElementById("keyError").style.display = "block";
+        return;
+      }
+
+      // Remove the loading screen
+      loadingScreen.remove();
+      modal.remove();
+
+      // Create a new container to show device info and action buttons
+      const deviceListContainer = document.createElement("div");
+      deviceListContainer.style.cssText = `
+        position: fixed;
+        top: 50px;
+        left: 50px;
+        background: #222;
+        color: white;
+        padding: 20px;
+        border: 2px solid #3498db;
+        border-radius: 8px;
+        font-family: sans-serif;
+        max-height: 80vh;
+        overflow-y: auto;
+        z-index: 999999;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      `;
+      deviceListContainer.innerHTML = `
+        <h3 style="color: #3498db;">🎶 Rick Roll GUI</h3>
+        <p id="usesLeftText">Key level: <b>${keyData.level}</b> | Uses left: <b>${keyData.usesLeft}</b></p>
+      `;
+      document.body.appendChild(deviceListContainer);
+
+      // Define the allowed device levels
+      const allowedLevels = ["lite", "normal", "normal+", "elite", "elite+", "elite++"];
+      const activeLevels = allowedLevels.slice(0, allowedLevels.indexOf((keyData.level || 'lite').toLowerCase()) + 1);
+
+      // Real-time listener for the usesLeft field
+      keyRef.on('value', snapshot => {
+        const updatedKeyData = snapshot.val();
+        if (updatedKeyData) {
+          document.getElementById("usesLeftText").innerHTML = `Key level: <b>${updatedKeyData.level}</b> | Uses left: <b>${updatedKeyData.usesLeft}</b>`;
+        }
+      });
+
+      const deviceButtons = new Map();
+
+      // Listen to device data changes from Firebase (real-time)
+      devicesRef.on("value", snapshot => {
+        const devicesData = snapshot.val() || {};
+        deviceButtons.forEach(button => button.remove());
+        deviceButtons.clear();
+
+        // Iterate through devices and create action buttons for each
+        Object.entries(devicesData).forEach(([deviceId, deviceData]) => {
+          const deviceLevel = (deviceData.level || "lite").toLowerCase();
+          if (!activeLevels.includes(deviceLevel)) {
+            return;
+          }
+
+          const deviceElement = document.createElement("div");
+          deviceElement.style.marginBottom = "15px";
+          deviceElement.style.padding = "10px";
+          deviceElement.style.borderRadius = "8px";
+          deviceElement.style.backgroundColor = "#444";
+          deviceElement.style.transition = "background-color 0.3s";
+          deviceElement.style.cursor = "pointer";
+
+          // Use the 'online' field if available or fallback to 'lastSeen'
+          const isDeviceOnline = deviceData.online || (deviceData.lastSeen && Date.now() - deviceData.lastSeen < 10000);
+          const deviceStatus = isDeviceOnline ? "🟢 Online" : "🔴 Offline";
+          deviceElement.innerHTML = `
+            <b>${deviceData.name || deviceId}</b> (Level: ${deviceData.level || "Lite"}) - ${deviceStatus}
+          `;
+
+          // Add Rick Roll button if device is online
+          const rickRollButton = document.createElement("button");
+          rickRollButton.textContent = "Rick Roll";
+          rickRollButton.style.marginLeft = "15px";
+          rickRollButton.style.padding = "10px 20px";
+          rickRollButton.style.backgroundColor = "#3498db";
+          rickRollButton.style.border = "none";
+          rickRollButton.style.color = "white";
+          rickRollButton.style.borderRadius = "5px";
+          rickRollButton.disabled = !isDeviceOnline;
+
+          rickRollButton.onclick = async () => {
+            if (keyData.usesLeft <= 0) {
+              return alert("❌ No uses left.");
+            }
+
+            // Send the action to the device
+            await database.ref(`sessions/public/devices/${deviceId}/action`).set("rickroll");
+
+            // Log the action
+            await database.ref("sessions/public/logs/uses").push().set({
+              timestamp: Date.now(),
+              key: accessKey,
+              triggeredBy: accessKey,
+              targetDeviceId: deviceId,
+              targetDeviceName: deviceData.name || deviceId
+            });
+
+            // Update the uses left
+            keyData.usesLeft--;
+            await keyRef.update({ usesLeft: keyData.usesLeft });
+
+            // Update the UI if usesLeft <= 0
+            if (keyData.usesLeft <= 0) {
+              await keyRef.remove();
+              alert("✅ Rick Roll sent. Your key is now expired.");
+            }
+          };
+
+          deviceElement.appendChild(rickRollButton);
+          deviceListContainer.appendChild(deviceElement);
+          deviceButtons.set(deviceId, deviceElement);
+        });
+      });
+    };
+  } catch (error) {
+    console.error("❌ Script error:", error);
+    alert("❌ A critical error occurred. Check console for details.");
+  }
+})();
