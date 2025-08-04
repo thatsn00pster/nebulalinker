@@ -1,0 +1,241 @@
+(async () => {
+  const password = prompt("Enter host password:");
+  if (password !== 'mosesischill') {
+    return alert("❌ Incorrect password.");
+  }
+
+  const loadingDiv = document.createElement("div");
+  loadingDiv.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    color: white;
+    z-index: 99999;
+  `;
+  loadingDiv.innerHTML = "Loading Firebase...";
+  document.body.appendChild(loadingDiv);
+
+  // Load Firebase if not already loaded
+  if (!window.firebase) {
+    const firebaseAppScript = document.createElement("script");
+    firebaseAppScript.src = "https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js";
+    document.head.appendChild(firebaseAppScript);
+    await new Promise(resolve => firebaseAppScript.onload = resolve);
+
+    const firebaseDatabaseScript = document.createElement("script");
+    firebaseDatabaseScript.src = "https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js";
+    document.head.appendChild(firebaseDatabaseScript);
+    await new Promise(resolve => firebaseDatabaseScript.onload = resolve);
+  }
+
+  const firebaseConfig = {
+    apiKey: 'AIzaSyD5hBBFtSWYOMIk1ZeLqcUKsAubdok4FWk',
+    authDomain: "nebcasino-5aca1.firebaseapp.com",
+    databaseURL: "https://nebcasino-5aca1-default-rtdb.firebaseio.com",
+    projectId: "nebcasino-5aca1",
+    storageBucket: "nebcasino-5aca1.appspot.com",
+    messagingSenderId: "907673467348",
+    appId: '1:907673467348:web:37b0bcbad757f95845fe41'
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
+  const devicesRef = database.ref("sessions/public/devices");
+  const keysRef = database.ref("sessions/public/keys");
+
+  // Create and style the host panel
+  const hostPanel = document.createElement("div");
+  hostPanel.style.cssText = `
+    position: fixed;
+    top: 50px;
+    left: 50px;
+    padding: 20px;
+    background: black;
+    color: white;
+    font-family: sans-serif;
+    border: 2px solid white;
+    border-radius: 10px;
+    z-index: 99999;
+    max-height: 90vh;
+    overflow: auto;
+    opacity: 0;
+    transform: translateY(-50px);
+    transition: opacity 0.5s, transform 0.5s;
+  `;
+  hostPanel.innerHTML = "<h2>🌌 Host Panel - Devices</h2>";
+  document.body.appendChild(hostPanel);
+
+  const keyManagementDiv = document.createElement("div");
+  keyManagementDiv.style.marginTop = "10px";
+  hostPanel.appendChild(keyManagementDiv);
+
+  const keyManagementHeader = document.createElement("div");
+  keyManagementHeader.style.cssText = "margin-top:20px;padding-top:20px;border-top:1px solid white";
+  keyManagementHeader.innerHTML = "<h3>🔑 Key Management</h3>";
+  hostPanel.appendChild(keyManagementHeader);
+
+  // Key creation form
+  const keyInput = document.createElement("input");
+  keyInput.placeholder = "Enter new key (e.g. ABC123)";
+  keyInput.style.marginRight = '5px';
+
+  const usesInput = document.createElement("input");
+  usesInput.type = "number";
+  usesInput.placeholder = "Uses";
+  usesInput.style.width = "60px";
+  usesInput.style.marginRight = "5px";
+
+  const levelSelect = document.createElement("select");
+  ["Lite", 'Normal', 'Normal+', "Elite", "Elite+", "Elite++"].forEach(level => {
+    const option = document.createElement("option");
+    option.value = level;
+    option.textContent = level;
+    levelSelect.appendChild(option);
+  });
+  levelSelect.style.marginRight = "5px";
+
+  const createKeyButton = document.createElement("button");
+  createKeyButton.textContent = "➕ Create Key";
+  createKeyButton.onclick = () => {
+    const key = keyInput.value.trim();
+    const uses = parseInt(usesInput.value);
+    const level = levelSelect.value;
+
+    if (!key || isNaN(uses) || uses <= 0) {
+      return alert("❌ Invalid key or uses.");
+    }
+
+    keysRef.child(key).set({
+      usesLeft: uses,
+      level: level,
+      created: Date.now()
+    }).then(() => {
+      alert(`✅ Key "${key}" created!`);
+      keyInput.value = '';
+      usesInput.value = '';
+      updateKeyList();
+    });
+  };
+
+  [keyInput, usesInput, levelSelect, createKeyButton].forEach(el => keyManagementHeader.appendChild(el));
+
+  const keyListDiv = document.createElement("div");
+  keyListDiv.style.marginTop = "20px";
+  keyManagementHeader.appendChild(keyListDiv);
+
+  // Function to update the key list
+  function updateKeyList() {
+    keysRef.on('value', snapshot => {
+      const keys = snapshot.val() || {};
+      keyListDiv.innerHTML = '';
+      Object.entries(keys).forEach(([key, data]) => {
+        const keyElement = document.createElement("div");
+        keyElement.style.cssText = "border:1px solid gray;padding:8px;margin:5px 0";
+        keyElement.innerHTML = `
+          <b>${key}</b> - ${data.usesLeft} uses left - Level: <b>${data.level}</b>
+          <br><small>Created: ${new Date(data.created).toLocaleString()}</small>
+        `;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "❌ Delete";
+        deleteButton.style.marginLeft = "10px";
+        deleteButton.onclick = () => {
+          if (confirm(`Delete key "${key}"?`)) {
+            keysRef.child(key).remove();
+          }
+        };
+
+        keyElement.appendChild(deleteButton);
+        keyListDiv.appendChild(keyElement);
+      });
+    });
+  }
+
+  const logDiv = document.createElement("div");
+  logDiv.style.cssText = "margin-top:30px;border-top:1px solid white;padding-top:20px";
+  logDiv.innerHTML = "<h3>📜 Use Log</h3>";
+  hostPanel.appendChild(logDiv);
+
+  const logContainer = document.createElement('div');
+  logDiv.appendChild(logContainer);
+
+  const useLogRef = database.ref("sessions/public/logs/uses");
+  useLogRef.on("value", snapshot => {
+    const logs = snapshot.val() || {};
+    const sortedLogs = Object.entries(logs).sort((a, b) => b[1].timestamp - a[1].timestamp);
+    logContainer.innerHTML = '';
+
+    sortedLogs.forEach(([logId, log]) => {
+      const logElement = document.createElement("div");
+      logElement.style.cssText = "margin-bottom: 10px; font-size: 14px;";
+      logElement.innerHTML = `🕒 <b>${new Date(log.timestamp).toLocaleTimeString()}</b>: 
+        <i>${log.triggeredBy}</i> used <b>${log.key}</b> on <b>${log.targetDeviceName}</b>`;
+      logContainer.appendChild(logElement);
+    });
+  });
+
+  const clearLogsButton = document.createElement('button');
+  clearLogsButton.textContent = "🧹 Clear Usage Logs";
+  clearLogsButton.style.marginTop = '10px';
+  clearLogsButton.onclick = () => {
+    if (confirm("Are you sure you want to delete all usage logs?")) {
+      useLogRef.remove().then(() => alert("✅ Usage logs cleared.")).catch(err => alert(`❌ Error clearing logs: ${err.message}`));
+    }
+  };
+  logDiv.appendChild(clearLogsButton);
+
+  updateKeyList();
+
+  setTimeout(() => {
+    hostPanel.style.opacity = '1';
+    hostPanel.style.transform = "translateY(0)";
+  }, 500);
+
+  setTimeout(() => {
+    loadingDiv.style.display = "none";
+  }, 1500);
+
+  // Device management and interactions
+  const refreshDevices = () => {
+    devicesRef.once("value", snapshot => {
+      hostPanel.querySelectorAll(".device").forEach(device => device.remove());
+      const devices = snapshot.val() || {};
+
+      Object.entries(devices).forEach(([deviceId, deviceData]) => {
+        const deviceElement = document.createElement('div');
+        deviceElement.className = "device";
+        deviceElement.style.cssText = "border:1px solid white;padding:10px;margin:10px 0";
+
+        const deviceNameInput = document.createElement('input');
+        deviceNameInput.value = deviceData.name || `Unnamed (${deviceId})`;
+        deviceNameInput.style.width = "150px";
+        deviceElement.appendChild(deviceNameInput);
+
+        const lastSeen = deviceData.lastSeen || 0;
+        const timeSinceLastSeen = Date.now() - lastSeen;
+        const isOnline = timeSinceLastSeen < 60000;
+        const lastSeenText = deviceData.lastSeen ? new Date(deviceData.lastSeen).toLocaleTimeString() : "never";
+
+        const statusSpan = document.createElement("span");
+        statusSpan.innerHTML = `Last seen: ${lastSeenText} | Status: ${isOnline ? "Online" : "Offline"}`;
+        deviceElement.appendChild(statusSpan);
+
+        const removeDeviceButton = document.createElement('button');
+        removeDeviceButton.textContent = "❌ Remove Device";
+        removeDeviceButton.onclick = () => {
+          if (confirm(`Remove device "${deviceData.name}"?`)) {
+            devicesRef.child(deviceId).remove();
+          }
+        };
+
+        deviceElement.appendChild(removeDeviceButton);
+        hostPanel.appendChild(deviceElement);
+      });
+    });
+  };
+
+  refreshDevices();
+  setInterval(refreshDevices, 30000);
+})();
