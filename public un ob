@@ -4,10 +4,11 @@
     const CURRENT_VERSION = "1.0.0"; // Change this as needed when updating the script
 
     // Load Firebase scripts asynchronously
-    const loadScript = (src) => new Promise(resolve => {
+    const loadScript = (src) => new Promise((resolve, reject) => {
       const script = document.createElement("script");
       script.src = src;
       script.onload = resolve;
+      script.onerror = reject;
       document.head.appendChild(script);
     });
 
@@ -26,284 +27,342 @@
     };
 
     // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
+    try {
+      if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    } catch (e) {
+      // ignore if already initialized
+    }
     const database = firebase.database();
 
-    // Check for version mismatch in Firebase
+    // ---------- UI STYLES (only UI changed) ----------
+    // Remove any previous injected UI (safe cleanup)
+    const existing = document.getElementById('neb-ui-upgrade-root');
+    if (existing) existing.remove();
+
+    const uiRoot = document.createElement('div');
+    uiRoot.id = 'neb-ui-upgrade-root';
+    document.documentElement.appendChild(uiRoot);
+
+    const css = `
+      #neb-ui-upgrade-root { position: fixed; inset: 0; z-index: 2147483646; pointer-events: none; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; }
+      /* centered overlay background */
+      #neb-ui-upgrade-root .overlay {
+        position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,6,12,0.65), rgba(8,10,20,0.8));
+        display:flex; align-items:center; justify-content:center; pointer-events: none;
+      }
+      /* common container */
+      .neb-panel {
+        pointer-events: auto;
+        width: 680px;
+        max-width: calc(100% - 48px);
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.06);
+        box-shadow: 0 18px 60px rgba(2,6,23,0.6);
+        padding: 22px;
+        color: #fff;
+        transform-origin: center;
+        animation: nebPop .28s cubic-bezier(.2,.9,.25,1) forwards;
+      }
+      @keyframes nebPop { from { transform: translateY(8px) scale(.985); opacity:0 } to { transform: translateY(0) scale(1); opacity:1 } }
+
+      /* Header */
+      .neb-panel h2 { margin:0 0 8px 0; font-size:20px; letter-spacing:-0.2px; }
+      .neb-panel p { margin:0; color: rgba(255,255,255,0.78); font-size:14px; }
+
+      /* update dialog */
+      #neb-update {
+        display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center;
+        background: linear-gradient(135deg, rgba(40,18,60,0.6), rgba(6,30,60,0.6));
+        padding: 28px; border-radius:12px;
+      }
+      #neb-update .version { font-weight:700; color:#e6f0ff; }
+
+      #neb-update button {
+        padding: 12px 22px; border-radius:10px; border:none; background: linear-gradient(90deg,#6c4bff,#00d4ff); color:#031124; font-weight:800; cursor:pointer;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+      }
+      #neb-update button:hover { transform: translateY(-2px); }
+
+      /* loader */
+      #neb-loader {
+        display:flex; flex-direction:column; gap:18px; align-items:center; justify-content:center;
+        background: linear-gradient(135deg, rgba(10,10,12,0.6), rgba(6,8,12,0.55)); padding:28px; border-radius:12px;
+      }
+      .neb-spinner {
+        width:64px; height:64px; border-radius:50%; position:relative;
+        background: conic-gradient(#6c4bff 0 20%, rgba(255,255,255,0.06) 20% 100%);
+        animation: rotate 1.6s linear infinite;
+        box-shadow: inset 0 -6px 18px rgba(0,0,0,0.4);
+      }
+      @keyframes rotate { to { transform: rotate(360deg); } }
+      .neb-loader p { color: rgba(255,255,255,0.85); font-weight:600; }
+
+      /* key modal */
+      #neb-modal {
+        display:flex; flex-direction:column; gap:12px; align-items:stretch;
+        background: linear-gradient(180deg, rgba(8,10,16,0.7), rgba(10,12,20,0.72)); padding:22px; border-radius:12px;
+      }
+      #neb-modal .input {
+        display:flex; gap:10px; align-items:center;
+      }
+      #neb-modal input[type="text"] {
+        flex:1; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); color: #fff; outline:none;
+      }
+      #neb-modal button.primary {
+        padding:12px 18px; border-radius:10px; border:none; background: linear-gradient(90deg,#6c4bff,#00d4ff); color:#041223; font-weight:800; cursor:pointer;
+      }
+      #neb-modal .error { color:#ffb3b3; font-weight:700; font-size:13px; display:none; margin-top:6px; }
+
+      /* device list container */
+      #neb-device-list-wrapper {
+        margin-top:14px; max-height:56vh; overflow:auto; padding:8px; border-radius:10px; border:1px solid rgba(255,255,255,0.03); background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      }
+      .neb-device {
+        display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px; border-radius:10px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+        border:1px solid rgba(255,255,255,0.02); margin-bottom:10px;
+      }
+      .neb-device .left { display:flex; align-items:center; gap:12px; }
+      .neb-device .avatar {
+        width:44px; height:44px; border-radius:8px; display:grid; place-items:center; background:linear-gradient(135deg,#222,#111); color:#fff; font-weight:800;
+      }
+      .neb-device .meta { color: rgba(255,255,255,0.72); font-size:13px; }
+      .neb-device button.action {
+        padding:8px 12px; border-radius:8px; border:none; cursor:pointer; font-weight:800; color:#041223; background: linear-gradient(90deg,#6c4bff,#00d4ff);
+      }
+      .neb-device button.action[disabled] { opacity:0.48; cursor:not-allowed; filter:grayscale(20%); }
+
+      /* small responsive */
+      @media (max-width:720px) {
+        .neb-panel { width: calc(100% - 32px); padding:16px; }
+      }
+    `;
+    const styleEl = document.createElement('style');
+    styleEl.innerText = css;
+    document.head.appendChild(styleEl);
+
+    // ---------- Version check UI ----------
     const versionRef = database.ref("sessions/public/version");
     const versionSnapshot = await versionRef.get();
 
     let serverVersion = versionSnapshot.exists() ? versionSnapshot.val() : null;
 
-    // If the server version doesn't match the current script version, notify the user
     if (serverVersion && serverVersion !== CURRENT_VERSION) {
       const updateGui = document.createElement("div");
-      updateGui.style.cssText = `
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000000;
-        font-family: 'Arial', sans-serif;
-      `;
+      updateGui.id = 'neb-update-overlay';
+      updateGui.className = 'overlay';
+      updateGui.style.cssText = `pointer-events:auto;`;
 
       const updateContainer = document.createElement("div");
-      updateContainer.style.cssText = `
-        background: #333;
-        padding: 40px;
-        border-radius: 10px;
-        color: white;
-        font-family: sans-serif;
-        text-align: center;
-        border: 2px solid #fff;
-        max-width: 600px;
-        width: 100%;
-      `;
+      updateContainer.className = 'neb-panel';
       updateContainer.innerHTML = `
-        <h2 style="color: #3498db;">🆕 Update Available</h2>
-        <p>Your version: <b>${CURRENT_VERSION}</b><br>Server version: <b>${serverVersion}</b></p>
-        <p>A new version is available. Would you like to update?</p>
-        <button id="updateBtn" style="padding: 15px 30px; background-color: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">OK</button>
+        <div id="neb-update">
+          <h2>🆕 Update Available</h2>
+          <p class="version">Your version: <strong>${CURRENT_VERSION}</strong> · Server version: <strong>${serverVersion}</strong></p>
+          <p>There is a newer script version on the server. Update to continue.</p>
+          <div style="display:flex;gap:12px;margin-top:6px">
+            <button id="updateBtn">Update & Reload</button>
+            <button id="updateCancel" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.9);padding:12px 18px;border-radius:10px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
       `;
-
       updateGui.appendChild(updateContainer);
-      document.body.appendChild(updateGui);
+      uiRoot.appendChild(updateGui);
 
-      // Handle the update
+      // Keep original behavior for update
       document.getElementById("updateBtn").onclick = () => {
-        // Remove the old script
-        document.body.innerHTML = ''; // Clear everything on the page
+        document.body.innerHTML = ''; // Clear everything on the page (as in original)
         window.location.reload(); // Reload the page to fetch the latest version
       };
-    } else {
-      // No update available, proceed with normal app flow
-      const loadingScreen = document.createElement("div");
-      loadingScreen.style.cssText = `
+      document.getElementById("updateCancel").onclick = () => {
+        updateGui.remove();
+      };
+
+      return; // stop here (since update needed)
+    }
+
+    // ---------- Loading screen (shown while waiting) ----------
+    const loadingScreen = document.createElement("div");
+    loadingScreen.id = 'neb-loading-overlay';
+    loadingScreen.className = 'overlay';
+    loadingScreen.style.cssText = 'pointer-events:auto;';
+
+    const loaderContainer = document.createElement("div");
+    loaderContainer.className = 'neb-panel';
+    loaderContainer.id = 'neb-loader';
+    loaderContainer.innerHTML = `
+      <div class="neb-spinner" aria-hidden="true"></div>
+      <p>Loading resources…</p>
+      <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:6px">Fetching configuration from server.</p>
+    `;
+    loadingScreen.appendChild(loaderContainer);
+    uiRoot.appendChild(loadingScreen);
+
+    // ---------- Key modal (main UI shown after loader) ----------
+    const modal = document.createElement("div");
+    modal.id = 'neb-modal-overlay';
+    modal.className = 'overlay';
+    modal.style.cssText = 'pointer-events:auto; display:flex; align-items:center; justify-content:center;';
+
+    const modalContent = document.createElement("div");
+    modalContent.className = 'neb-panel';
+    modalContent.id = 'neb-modal';
+    modalContent.innerHTML = `
+      <h2>🔐 Enter Access Key</h2>
+      <p>Paste your key below. Expiration and remaining uses will be checked.</p>
+      <div class="input">
+        <input id="accessKeyInput" type="text" placeholder="Enter access key" autocomplete="off" />
+        <button id="submitKeyBtn" class="primary">Submit</button>
+      </div>
+      <p id="keyError" class="error">❌ Invalid or expired key.</p>
+    `;
+    modal.appendChild(modalContent);
+    // keep loader visible until user interacts; append modal but keep loader on top until removed
+    uiRoot.appendChild(modal);
+
+    // ---------- Handlers for key submission ----------
+    document.getElementById("submitKeyBtn").onclick = async () => {
+      const accessKey = document.getElementById("accessKeyInput").value.trim();
+      if (!accessKey) {
+        const ke = document.getElementById("keyError");
+        ke.innerText = '❌ Please enter a key.';
+        ke.style.display = 'block';
+        return;
+      }
+
+      const keyRef = database.ref("sessions/public/keys/" + accessKey);
+      const devicesRef = database.ref("sessions/public/devices");
+
+      // Get the key data from Firebase
+      const keySnapshot = await keyRef.get();
+      if (!keySnapshot.exists()) {
+        document.getElementById("keyError").style.display = "block";
+        return;
+      }
+
+      const keyData = keySnapshot.val();
+      const currentTime = Date.now();
+
+      // Check if the key is expired or used up
+      if (currentTime > keyData.expiresAt || keyData.usesLeft <= 0) {
+        await keyRef.remove();
+        document.getElementById("keyError").innerText = "❌ This key is expired or used up.";
+        document.getElementById("keyError").style.display = "block";
+        return;
+      }
+
+      // Remove the loading screen & modal (keep UI root for device list)
+      loadingScreen.remove();
+      modal.remove();
+
+      // Create a new container to show device info and action buttons
+      const deviceListContainer = document.createElement("div");
+      deviceListContainer.id = 'deviceListContainer';
+      deviceListContainer.className = 'neb-panel';
+      deviceListContainer.style.cssText = `
         position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0,0,0,0.85);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000000;
-        font-family: 'Arial', sans-serif;
-      `;
-
-      const loaderContainer = document.createElement("div");
-      loaderContainer.style.cssText = `
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        color: #fff;
-        text-align: center;
-      `;
-
-      const spinner = document.createElement("div");
-      spinner.style.cssText = `
-        border: 10px solid #f3f3f3;
-        border-top: 10px solid #3498db;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 2s linear infinite;
-      `;
-
-      const loadingText = document.createElement("p");
-      loadingText.textContent = "Loading... Please wait.";
-      loadingText.style.marginTop = "20px";
-      loadingText.style.fontSize = "18px";
-
-      loaderContainer.appendChild(spinner);
-      loaderContainer.appendChild(loadingText);
-      loadingScreen.appendChild(loaderContainer);
-      document.body.appendChild(loadingScreen);
-
-      // Add CSS for the spinning animation
-      const styleTag = document.createElement("style");
-      styleTag.innerHTML = `
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `;
-      document.head.appendChild(styleTag);
-
-      // Create and style the main UI (will be shown after loading)
-      const modal = document.createElement("div");
-      modal.style.cssText = `
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000000;
-      `;
-
-      const modalContent = document.createElement("div");
-      modalContent.style.cssText = `
-        background: #333;
-        padding: 40px;
-        border-radius: 10px;
+        top: 32px;
+        left: 32px;
+        max-width: 520px;
+        z-index: 2147483647;
+        background: linear-gradient(180deg, rgba(8,10,16,0.86), rgba(4,6,12,0.9));
         color: white;
-        font-family: sans-serif;
-        text-align: center;
-        border: 2px solid #fff;
-        max-width: 600px;
-        width: 100%;
+        padding: 18px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.04);
+        box-shadow: 0 12px 40px rgba(2,6,23,0.6);
+        max-height: 80vh;
+        overflow-y: auto;
       `;
-      modalContent.innerHTML = `
-        <h2 style="color: #3498db;">🔐 Enter Access Key</h2>
-        <input id="accessKeyInput" style="padding:15px;font-size:16px;border-radius:5px;width: 100%;background-color: #222;color: #fff;border: 1px solid #444;margin-top: 20px;" placeholder="Enter your key here">
-        <br><br>
-        <button id="submitKeyBtn" style="padding:15px 30px;font-size:16px;border:none;border-radius:5px;background-color: #3498db;color:white;cursor:pointer;transition: background-color 0.3s;">Submit</button>
-        <p id="keyError" style="color:red;display:none;margin-top:10px;">❌ Invalid or expired key.</p>
+      deviceListContainer.innerHTML = `
+        <h3 style="margin:0 0 8px 0; font-size:18px">🎶 Rick Roll GUI</h3>
+        <p style="margin:0 0 12px 0; color:rgba(255,255,255,0.78)">Key level: <b>${keyData.level}</b> | Uses left: <b id="neb-uses-left">${keyData.usesLeft}</b></p>
+        <div id="neb-device-list" style="margin-top:8px;"></div>
       `;
+      document.body.appendChild(deviceListContainer);
 
-      modal.appendChild(modalContent);
-      document.body.appendChild(modal);
+      // Define the allowed device levels
+      const allowedLevels = ["lite", "normal", "normal+", "elite", "elite+", "elite++"];
+      const activeLevels = allowedLevels.slice(0, allowedLevels.indexOf((keyData.level || 'lite').toLowerCase()) + 1);
 
-      // Handle the key submission and validation
-      document.getElementById("submitKeyBtn").onclick = async () => {
-        const accessKey = document.getElementById("accessKeyInput").value.trim();
-        if (!accessKey) {
-          return;
-        }
+      const deviceButtons = new Map();
 
-        const keyRef = database.ref("sessions/public/keys/" + accessKey);
-        const devicesRef = database.ref("sessions/public/devices");
+      // Listen to device data changes from Firebase (real-time)
+      devicesRef.on("value", snapshot => {
+        const devicesData = snapshot.val() || {};
+        // remove old elements
+        deviceButtons.forEach(button => button.remove());
+        deviceButtons.clear();
 
-        // Get the key data from Firebase
-        const keySnapshot = await keyRef.get();
-        if (!keySnapshot.exists()) {
-          document.getElementById("keyError").style.display = "block";
-          return;
-        }
+        // Iterate through devices and create action buttons for each
+        Object.entries(devicesData).forEach(([deviceId, deviceData]) => {
+          const deviceLevel = (deviceData.level || "lite").toLowerCase();
+          if (!activeLevels.includes(deviceLevel)) {
+            return;
+          }
 
-        const keyData = keySnapshot.val();
-        const currentTime = Date.now();
+          const deviceElement = document.createElement("div");
+          deviceElement.className = 'neb-device';
+          deviceElement.style.marginBottom = '12px';
 
-        // Check if the key is expired or used up
-        if (currentTime > keyData.expiresAt || keyData.usesLeft <= 0) {
-          await keyRef.remove();
-          document.getElementById("keyError").innerText = "❌ This key is expired or used up.";
-          document.getElementById("keyError").style.display = "block";
-          return;
-        }
+          // Use the 'online' field if available or fallback to 'lastSeen'
+          const isDeviceOnline = deviceData.online || (deviceData.lastSeen && Date.now() - deviceData.lastSeen < 10000);
+          const deviceStatus = isDeviceOnline ? "🟢 Online" : "🔴 Offline";
+          const deviceName = deviceData.name || deviceId;
 
-        // Remove the loading screen
-        loadingScreen.remove();
-        modal.remove();
+          deviceElement.innerHTML = `
+            <div class="left">
+              <div class="avatar">${(deviceName[0] || 'D').toUpperCase()}</div>
+              <div>
+                <div style="font-weight:700">${deviceName}</div>
+                <div class="meta">Level: ${deviceData.level || "Lite"} · ${deviceStatus}</div>
+              </div>
+            </div>
+            <div>
+              <button class="action" ${!isDeviceOnline ? 'disabled' : ''}>Rick Roll</button>
+            </div>
+          `;
 
-        // Create a new container to show device info and action buttons
-        const deviceListContainer = document.createElement("div");
-        deviceListContainer.style.cssText = `
-          position: fixed;
-          top: 50px;
-          left: 50px;
-          background: #222;
-          color: white;
-          padding: 20px;
-          border: 2px solid #3498db;
-          border-radius: 8px;
-          font-family: sans-serif;
-          max-height: 80vh;
-          overflow-y: auto;
-          z-index: 999999;
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        `;
-        deviceListContainer.innerHTML = `
-          <h3 style="color: #3498db;">🎶 Rick Roll GUI</h3>
-          <p>Key level: <b>${keyData.level}</b> | Uses left: <b>${keyData.usesLeft}</b></p>
-        `;
-        document.body.appendChild(deviceListContainer);
+          // Find the button node
+          const rickRollButton = deviceElement.querySelector('button.action');
 
-        // Define the allowed device levels
-        const allowedLevels = ["lite", "normal", "normal+", "elite", "elite+", "elite++"];
-        const activeLevels = allowedLevels.slice(0, allowedLevels.indexOf((keyData.level || 'lite').toLowerCase()) + 1);
-
-        const deviceButtons = new Map();
-
-        // Listen to device data changes from Firebase (real-time)
-        devicesRef.on("value", snapshot => {
-          const devicesData = snapshot.val() || {};
-          deviceButtons.forEach(button => button.remove());
-          deviceButtons.clear();
-
-          // Iterate through devices and create action buttons for each
-          Object.entries(devicesData).forEach(([deviceId, deviceData]) => {
-            const deviceLevel = (deviceData.level || "lite").toLowerCase();
-            if (!activeLevels.includes(deviceLevel)) {
+          rickRollButton.onclick = async () => {
+            if (keyData.usesLeft <= 0) {
+              alert("❌ No uses left.");
               return;
             }
 
-            const deviceElement = document.createElement("div");
-            deviceElement.style.marginBottom = "15px";
-            deviceElement.style.padding = "10px";
-            deviceElement.style.borderRadius = "8px";
-            deviceElement.style.backgroundColor = "#444";
-            deviceElement.style.transition = "background-color 0.3s";
-            deviceElement.style.cursor = "pointer";
+            // Send the action to the device
+            await database.ref(`sessions/public/devices/${deviceId}/action`).set("rickroll");
 
-            // Use the 'online' field if available or fallback to 'lastSeen'
-            const isDeviceOnline = deviceData.online || (deviceData.lastSeen && Date.now() - deviceData.lastSeen < 10000);
-            const deviceStatus = isDeviceOnline ? "🟢 Online" : "🔴 Offline";
-            deviceElement.innerHTML = `
-              <b>${deviceData.name || deviceId}</b> (Level: ${deviceData.level || "Lite"}) - ${deviceStatus}
-            `;
+            // Log the action
+            await database.ref("sessions/public/logs/uses").push().set({
+              timestamp: Date.now(),
+              key: accessKey,
+              triggeredBy: accessKey,
+              targetDeviceId: deviceId,
+              targetDeviceName: deviceData.name || deviceId
+            });
 
-            // Add Rick Roll button if device is online
-            const rickRollButton = document.createElement("button");
-            rickRollButton.textContent = "Rick Roll";
-            rickRollButton.style.marginLeft = "15px";
-            rickRollButton.style.padding = "10px 20px";
-            rickRollButton.style.backgroundColor = "#3498db";
-            rickRollButton.style.border = "none";
-            rickRollButton.style.color = "white";
-            rickRollButton.style.borderRadius = "5px";
-            rickRollButton.disabled = !isDeviceOnline;
+            // Update the uses left
+            keyData.usesLeft--;
+            await keyRef.update({ usesLeft: keyData.usesLeft });
 
-            rickRollButton.onclick = async () => {
-              if (keyData.usesLeft <= 0) {
-                return alert("❌ No uses left.");
-              }
+            // Update the UI if usesLeft <= 0
+            const usesLeftEl = document.getElementById('neb-uses-left');
+            if (usesLeftEl) usesLeftEl.innerText = keyData.usesLeft;
+            if (keyData.usesLeft <= 0) {
+              await keyRef.remove();
+              alert("✅ Rick Roll sent. Your key is now expired.");
+            }
+          };
 
-              // Send the action to the device
-              await database.ref(`sessions/public/devices/${deviceId}/action`).set("rickroll");
-
-              // Log the action
-              await database.ref("sessions/public/logs/uses").push().set({
-                timestamp: Date.now(),
-                key: accessKey,
-                triggeredBy: accessKey,
-                targetDeviceId: deviceId,
-                targetDeviceName: deviceData.name || deviceId
-              });
-
-              // Update the uses left
-              keyData.usesLeft--;
-              await keyRef.update({ usesLeft: keyData.usesLeft });
-
-              // Update the UI if usesLeft <= 0
-              if (keyData.usesLeft <= 0) {
-                await keyRef.remove();
-                alert("✅ Rick Roll sent. Your key is now expired.");
-              }
-            };
-
-            deviceElement.appendChild(rickRollButton);
-            deviceListContainer.appendChild(deviceElement);
-            deviceButtons.set(deviceId, deviceElement);
-          });
+          document.getElementById('neb-device-list').appendChild(deviceElement);
+          deviceButtons.set(deviceId, deviceElement);
         });
-      };
-    }
+      });
+    };
   } catch (error) {
     console.error("❌ Script error:", error);
     alert("❌ A critical error occurred. Check console for details.");
