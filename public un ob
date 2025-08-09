@@ -307,7 +307,7 @@
           deviceElement.style.marginBottom = '12px';
 
           // Use the 'online' field if available or fallback to 'lastSeen'
-          const isDeviceOnline = deviceData.online || (deviceData.lastSeen && Date.now() - deviceData.lastSeen < 10000);
+const isDeviceOnline = deviceData.online === true || (deviceData.lastSeen && (Date.now() - deviceData.lastSeen < 15000));
           const deviceStatus = isDeviceOnline ? "🟢 Online" : "🔴 Offline";
           const deviceName = deviceData.name || deviceId;
 
